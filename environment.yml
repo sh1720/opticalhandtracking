@@ -1,0 +1,22 @@
+name: handtracking-env
+channels:
+  - defaults
+  - pytorch
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pytorch
+  - torchvision
+  - torchaudio
+  - cudatoolkit=11.8  # (match your GPU/CUDA setup)
+  - numpy
+  - opencv
+  - tqdm
+  - matplotlib
+  - manopth
+  - pip
+  - pyyaml
+  - pip:
+      - open3d
+      - trimesh
+      - pyrender

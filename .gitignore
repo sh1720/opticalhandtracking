@@ -1,0 +1,8 @@
+# Ignore the testing script
+testing.py
+
+# Ignore the networks directory
+networks/
+
+# Ignore Python bytecode cache
+__pycache__/

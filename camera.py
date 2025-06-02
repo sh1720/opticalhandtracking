@@ -131,9 +131,12 @@ def run_webcam(detnet, device, transform):
         cv2.imshow("Image", image)
         end_draw = time.perf_counter()
 
+        vertices = np.asarray(vertices)
+        vertices[:, [0, 2]] *= -1
+
         start_mesh = time.perf_counter()
         mesh = o3d.geometry.TriangleMesh()
-        mesh.vertices = o3d.utility.Vector3dVector(vertices)
+        mesh.vertices = o3d.utility.Vector3dVector(vertices * -1)
         mesh.triangles = o3d.utility.Vector3iVector(faces)
         mesh.paint_uniform_color([228 / 255, 178 / 255, 148 / 255])
         mesh.compute_vertex_normals()
@@ -162,46 +165,6 @@ def run_webcam(detnet, device, transform):
     cap.release()
     cv2.destroyAllWindows()
 
-
-# def run_webcam(detnet, device, transform):
-#     cap = cv2.VideoCapture(0)
-#     if not cap.isOpened():
-#         print("Could not open webcam.")
-#         return
-
-#     # Open Viewer
-#     viewer = o3d.visualization.Visualizer()
-#     viewer.create_window(window_name='MANO Mesh', width=640, height=480, visible=True)
-#     viewer.run()
-
-#     while True:
-#         viewer.clear_geometries()
-#         ret, frame = cap.read()
-#         if not ret:
-#             break
-
-#         crop, uv_pts, xyz_pts, _, _, vertices, faces = process_frame(frame, detnet, device, transform)
-
-#         # Draw 2D keypoints on image
-#         image = draw_hand_keypoints(crop.copy(), uv_pts, xyz_pts)
-#         cv2.imshow("Image", image)
-
-#         mesh = o3d.geometry.TriangleMesh()
-#         mesh.vertices = o3d.utility.Vector3dVector(vertices)
-#         mesh.triangles = o3d.utility.Vector3iVector(faces)
-#         mesh.paint_uniform_color([228 / 255, 178 / 255, 148 / 255])
-#         mesh.compute_vertex_normals()
-#         viewer.add_geometry(mesh)
-
-#         # Render once
-#         viewer.update_geometry(mesh)
-#         viewer.poll_events()
-#         viewer.update_renderer()
-
-#         key = cv2.waitKey(1)
-#         if key == ord('q'):
-#             viewer.destroy_window()
-#             break
 
 
 def run_video(video_path, detnet, device, transform):

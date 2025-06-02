@@ -1,58 +1,10 @@
 import numpy as np
-import torch
 
 from mano_utils import MANOHandMesh
 from collections import deque
-from transforms3d.quaternions import quat2mat
-from transforms3d.axangles import mat2axangle
+from config import MANOHandJoints, MAX_JOINT_ANGLES_MANO
+from scipy.spatial.transform import Rotation as R
 
-class MANOHandJoints:
-  n_joints = 21
-
-  labels = [
-    'W', #0
-    'I0', 'I1', 'I2', #3
-    'M0', 'M1', 'M2', #6
-    'L0', 'L1', 'L2', #9
-    'R0', 'R1', 'R2', #12
-    'T0', 'T1', 'T2', #15
-    'I3', 'M3', 'L3', 'R3', 'T3' #20, tips are manually added (not in MANO)
-  ]
-
-  # finger tips are not joints in MANO, we label them on the mesh manually
-  mesh_mapping = {16: 333, 17: 444, 18: 672, 19: 555, 20: 744}
-
-  parents = [
-    None,
-    0, 1, 2,
-    0, 4, 5,
-    0, 7, 8,
-    0, 10, 11,
-    0, 13, 14,
-    3, 6, 9, 12, 15
-  ]
-
-
-class MPIIHandJoints:
-  n_joints = 21
-
-  labels = [
-    'W', #0
-    'T0', 'T1', 'T2', 'T3', #4
-    'I0', 'I1', 'I2', 'I3', #8
-    'M0', 'M1', 'M2', 'M3', #12
-    'R0', 'R1', 'R2', 'R3', #16
-    'L0', 'L1', 'L2', 'L3', #20
-  ]
-
-  parents = [
-    None,
-    0, 1, 2, 3,
-    0, 5, 6, 7,
-    0, 9, 10, 11,
-    0, 13, 14, 15,
-    0, 17, 18, 19
-  ]
 
 def to_dict(joints):
     temp_dict = dict()
@@ -129,3 +81,35 @@ def compute_angle_axis_from_rotmat(R: np.ndarray) -> np.ndarray:
     axis /= (2 * np.sin(theta) + 1e-8)
 
     return axis * theta  # axis-angle vector
+
+
+def clip_pose_R_per_joint(pose_R):
+    """
+    pose_R: (1, 16, 3, 3) array of rotation matrices
+    Returns: (1, 16, 3, 3) array with clipped rotations
+    """
+    clipped_rotmats = pose_R.copy()
+
+    for i in range(16):
+        rotmat = pose_R[0, i]
+        limits = MAX_JOINT_ANGLES_MANO[i]  # [(minX, maxX), (minY, maxY), (minZ, maxZ)]
+
+        # Convert to Euler angles (in radians)
+        r = R.from_matrix(rotmat)
+        euler = r.as_euler('XYZ', degrees=False)
+        r = R.from_matrix(pose_R[0, i])
+        print(f"Euler XYZ: {r.as_euler('XYZ')}")
+        print(f"Euler ZYX: {r.as_euler('ZYX')}")
+
+
+        print(f"[DEBUG] Euler: {euler}")
+        # Clamp each axis
+        for axis in range(3):
+            euler[axis] = np.clip(euler[axis], limits[axis][0], limits[axis][1])
+            print (f"[DEBUG]: CLIPPED! ")
+
+        # Convert back to rotation matrix
+        r_clipped = R.from_euler('XYZ', euler, degrees=False)
+        clipped_rotmats[0, i] = r_clipped.as_matrix()
+
+    return clipped_rotmats

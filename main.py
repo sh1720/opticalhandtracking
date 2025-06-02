@@ -17,7 +17,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Load DetNet
 DetNet = detnet().to(device)
-detnet_ckpt = torch.load('networks/detnet/ckp_detnet_68.pth', map_location=device)
+detnet_ckpt = torch.load('networks/detnet/ckp_detnet_106.pth', map_location=device)
 DetNet.load_state_dict(detnet_ckpt)
 DetNet.eval()
 
